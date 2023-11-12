@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:income_track/chart/IncomeExpenseMonthly.dart';
+import 'package:income_track/chart/TxnCategory.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 class Home extends StatefulWidget {
   final Map args;
@@ -9,6 +12,9 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+
+  int selector = 0;
+  String barChartTitle = "Your spends this month";
 
   List<Map<String,String>> data = [
     {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
@@ -23,6 +29,19 @@ class _HomeState extends State<Home> {
     {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
     {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
     {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+  ];
+
+  List<IncomeExpenseMonthly> barChartData = [
+    IncomeExpenseMonthly(label: 'Jan', income: 35, expense: 10),
+    IncomeExpenseMonthly(label: 'Feb', income: 5, expense: 68),
+    IncomeExpenseMonthly(label: 'Mar', income: 50, expense: 46),
+    IncomeExpenseMonthly(label: 'Apr', income: 68, expense: 75),
+  ];
+
+  List<TxnCategory> pieChartData = [
+    TxnCategory(txnMode: 'CC', stats: 25),
+    TxnCategory(txnMode: 'UPI', stats: 38),
+    TxnCategory(txnMode: 'CASH', stats: 34)
   ];
 
   @override
@@ -113,6 +132,151 @@ class _HomeState extends State<Home> {
     );
   }
 
+  Widget getAnalyticsScreen() {
+    return Scaffold(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(10),
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(left: 10.0,bottom: 25, top: 8),
+              child: Text("Analytics", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+            ),
+            SizedBox(
+              height: 60,
+              child: ListView(
+                padding: const EdgeInsets.all(10),
+                physics: const BouncingScrollPhysics(),
+                scrollDirection: Axis.horizontal,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 5),
+                    child: TextButton(
+                      onPressed: (){
+                        setState(() {
+                          selector = 0;
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        backgroundColor: selector==0?Colors.white:Colors.white12,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(200))
+                      ),
+                      child: Text("This month",style: TextStyle(color: selector==0?Colors.black:Colors.white),),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 5),
+                    child: TextButton(
+                      onPressed: (){
+                        setState(() {
+                          selector = 1;
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          backgroundColor: selector==1?Colors.white:Colors.white12,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(200))
+                      ),
+                      child: Text("This year",style: TextStyle(color: selector==1?Colors.black:Colors.white),),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 5),
+                    child: TextButton(
+                      onPressed: (){
+                        setState(() {
+                          selector = 2;
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          backgroundColor: selector==2?Colors.white:Colors.white12,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(200))
+                      ),
+                      child: Text("Monthly", style: TextStyle(color: selector==2?Colors.black:Colors.white),),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 5),
+                    child: TextButton(
+                      onPressed: (){
+                        setState(() {
+                          selector = 3;
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          backgroundColor: selector==3?Colors.white:Colors.white12,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(200))
+                      ),
+                      child: Text("Yearly", style: TextStyle(color: selector==3?Colors.black:Colors.white),),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20,),
+            Text(barChartTitle,style: const TextStyle(fontWeight: FontWeight.bold),),
+            const SizedBox(height: 20,),
+            SizedBox(
+              height: 350,
+              child: SfCartesianChart(
+                  tooltipBehavior: TooltipBehavior(enable: true),
+                  primaryXAxis: CategoryAxis(
+                    majorGridLines: const MajorGridLines(width: 0),
+                  ),
+                  primaryYAxis: NumericAxis(
+                      majorGridLines: const MajorGridLines(width: 0)
+                  ),
+                  series: <CartesianSeries>[
+                    ColumnSeries<IncomeExpenseMonthly, String>(
+                        color: Colors.white,
+                        name: "Expense",
+                        dataSource: barChartData,
+                        xValueMapper: (IncomeExpenseMonthly data, _) => data.label,
+                        yValueMapper: (IncomeExpenseMonthly data, _) => data.expense
+                    ),
+                    ColumnSeries<IncomeExpenseMonthly, String>(
+                        color: Colors.white10,
+                        name: "Income",
+                        dataSource: barChartData,
+                        xValueMapper: (IncomeExpenseMonthly data, _) => data.label,
+                        yValueMapper: (IncomeExpenseMonthly data, _) => data.income
+                    )
+                  ]
+              ),
+            ),
+            const SizedBox(height: 20,),
+            const Text("Transaction modes",style: TextStyle(fontWeight: FontWeight.bold),),
+            const SizedBox(height: 20,),
+            SizedBox(
+              height: 300,
+              child: SfCircularChart(
+                  tooltipBehavior: TooltipBehavior(enable: true),
+                  series: <CircularSeries>[
+                    // Render pie chart
+                    PieSeries<TxnCategory, String>(
+                      explode: true,
+                        dataSource: pieChartData,
+                        xValueMapper: (TxnCategory data, _) => data.txnMode,
+                        yValueMapper: (TxnCategory data, _) => data.stats,
+                        dataLabelMapper: (TxnCategory data, _) => data.txnMode,
+                        pointColorMapper: (TxnCategory data, _) => data.color,
+                        dataLabelSettings: const DataLabelSettings(
+                            isVisible: true,
+                          textStyle: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)
+                        )
+                    )
+                  ]
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -120,7 +284,7 @@ class _HomeState extends State<Home> {
         child: TabBarView(
           children: [
             getHomeScreen(),
-            getHomeScreen()
+            getAnalyticsScreen()
           ],
         )
     );
