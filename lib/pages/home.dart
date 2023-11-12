@@ -11,23 +11,22 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
 
   List<Map<String,String>> data = [
-    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
-    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "summary":"Demo"},
+    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
+    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
   ];
 
   @override
   void initState() {
-    print(data);
     super.initState();
   }
 
@@ -54,7 +53,9 @@ class _HomeState extends State<Home> {
                   const SizedBox(height: 15,),
                   const Text("₹20000.00",style: TextStyle(fontSize: 40),),
                   const SizedBox(height: 15,),
-                  TextButton.icon(onPressed: (){}, icon: const Icon(Icons.add), label: const Text("Add Spend")),
+                  TextButton.icon(onPressed: ()async{
+                    await Navigator.pushNamed(context, "/addSpend");
+                  }, icon: const Icon(Icons.add), label: const Text("Add Spend")),
                 ],
               ),
             ),
@@ -74,15 +75,15 @@ class _HomeState extends State<Home> {
                     children: [
                       Expanded(
                         child: ListView.builder(
-                          physics: BouncingScrollPhysics(),
-                          padding: EdgeInsets.all(20),
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.all(20),
                           itemCount: data.length,
                           itemBuilder: (context, index) {
                             if(index == 0) {
                               index--;
                               return Center(
                                 child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 15),
+                                  padding: const EdgeInsets.only(bottom: 25, top: 15),
                                   child: Text("Your recent spends", style: TextStyle(color: Colors.grey[700],fontWeight: FontWeight.bold),),
                                 )
                               );
@@ -90,11 +91,11 @@ class _HomeState extends State<Home> {
                             return ListTile(
                               leading: Text(
                                 data[index]["txnMode"]!,
-                                style: TextStyle(fontWeight: FontWeight.bold,fontSize: 12),
+                                style: const TextStyle(fontWeight: FontWeight.bold,fontSize: 12),
                               ),
-                              title: Text(data[index]["summary"]!, style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
-                              subtitle: Text(data[index]["date"]!, style: TextStyle(fontSize: 13,fontWeight: FontWeight.bold),),
-                              trailing: Text("₹${data[index]["amount"]!}", style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
+                              title: Text(data[index]["item"]!, style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
+                              subtitle: Text(data[index]["date"]!, style: const TextStyle(fontSize: 13,fontWeight: FontWeight.bold),),
+                              trailing: Text("₹${data[index]["amount"]!}", style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
                               isThreeLine: true,
                               onTap: (){},
                             );
