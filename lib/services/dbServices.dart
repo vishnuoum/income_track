@@ -17,9 +17,9 @@ class DBService {
           onCreate: (Database db, int version) async {
             // When creating the db, create the table
             await db.execute(
-                'CREATE TABLE income (id INTEGER PRIMARY KEY AUTOINCREMENT, date date, amount REAL)');
+                'CREATE TABLE income (id INTEGER PRIMARY KEY AUTOINCREMENT, date date, time time, amount REAL)');
             await db.execute(
-                'CREATE TABLE spend (id INTEGER PRIMARY KEY AUTOINCREMENT, date date, item TEXT, category TEXT, txnMode TEXT, amount REAL)');
+                'CREATE TABLE spend (id INTEGER PRIMARY KEY AUTOINCREMENT, date date, time time, item TEXT, category TEXT, txnMode TEXT, amount REAL)');
           });
       log('initDB() success');
       return "done";
@@ -34,7 +34,7 @@ class DBService {
     try {
       await database.transaction((txn) async {
         int id = await txn.rawInsert(
-            "INSERT INTO spend (id, date, item, category, txnMode, amount) VALUES($entryId, '$date', '$item', '$category', '$txnMode', $amount)");
+            "INSERT INTO spend (id, date, time, item, category, txnMode, amount) VALUES($entryId, '$date', time('now'), '$item', '$category', '$txnMode', $amount)");
         log('addSpend() inserted: $id');
       });
       return "done";
@@ -49,7 +49,7 @@ class DBService {
     try {
       await database.transaction((txn) async {
         int id = await txn.rawInsert(
-            "INSERT INTO income(id, date, amount) VALUES($entryId, '$date', $amount)");
+            "INSERT INTO income(id, date, time, amount) VALUES($entryId, '$date', time('now'), $amount)");
         log('addIncome() inserted: $id');
       });
       return "done";
@@ -133,6 +133,25 @@ class DBService {
     }
     catch(error){
       log("getMonthlyStats() error: $error");
+      return "error";
+    }
+  }
+
+  Future<dynamic> getAllTxn() async {
+    try {
+      List<Map> data = await database.rawQuery(
+        """
+        Select id, date, time, amount, item, category, txnMode,"spend" as type from spend 
+        union
+        Select id, date, time, amount, '' as item, '' as category, '' as txnMode,"income" as type  from income
+        order by time desc
+        """
+      );
+      log('getAllTxn() queries: $data');
+      return data;
+    }
+    catch(error){
+      log("getAllTxn() error: $error");
       return "error";
     }
   }

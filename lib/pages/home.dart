@@ -3,7 +3,6 @@ import 'package:income_track/chart/IncomeExpenseMonthly.dart';
 import 'package:income_track/chart/TxnCategory.dart';
 import 'package:income_track/services/dbServices.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'dart:developer';
 
 class Home extends StatefulWidget {
   final Map args;
@@ -23,18 +22,11 @@ class _HomeState extends State<Home> {
 
   List<Map> data = [];
 
-  List<IncomeExpenseMonthly> barChartData = [
-    IncomeExpenseMonthly(label: 'Jan', income: 35, expense: 10),
-    IncomeExpenseMonthly(label: 'Feb', income: 5, expense: 68),
-    IncomeExpenseMonthly(label: 'Mar', income: 50, expense: 46),
-    IncomeExpenseMonthly(label: 'Apr', income: 68, expense: 75),
-  ];
+  List<Map> allTxn = [];
 
-  List<TxnCategory> pieChartData = [
-    TxnCategory(txnMode: 'CC', stats: 25),
-    TxnCategory(txnMode: 'UPI', stats: 38),
-    TxnCategory(txnMode: 'CASH', stats: 34)
-  ];
+  List<IncomeExpenseMonthly> barChartData = [];
+
+  List<TxnCategory> pieChartData = [];
 
   @override
   void initState() {
@@ -68,6 +60,12 @@ class _HomeState extends State<Home> {
       pieChartData = response;
     }
 
+    // Load all txn
+    response = await dbService.getAllTxn();
+    if(response != "error") {
+      allTxn = response;
+    }
+
     setState(() {});
 
   }
@@ -78,7 +76,8 @@ class _HomeState extends State<Home> {
         title: const Text("Home", style: TextStyle(fontWeight: FontWeight.bold),),
         actions: [
           IconButton(onPressed: ()async{
-            await Navigator.pushNamed(context, "/addIncome");
+            await Navigator.pushNamed(context, "/addIncome" ,arguments: {"dbObject":dbService});
+            loadHome();
           },icon: const Icon(Icons.more_vert))
         ],
       ),
@@ -162,10 +161,10 @@ class _HomeState extends State<Home> {
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+          // padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
           children: [
             const Padding(
-              padding: EdgeInsets.only(left: 10.0,bottom: 25, top: 8),
+              padding: EdgeInsets.only(left: 20.0,bottom: 25, top: 18),
               child: Text("Analytics", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
             ),
             SizedBox(
@@ -243,11 +242,15 @@ class _HomeState extends State<Home> {
               ),
             ),
             const SizedBox(height: 20,),
-            Text(barChartTitle,style: const TextStyle(fontWeight: FontWeight.bold),),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Text(barChartTitle,style: const TextStyle(fontWeight: FontWeight.bold),),
+            ),
             const SizedBox(height: 20,),
             SizedBox(
-              height: 350,
+              height: 300,
               child: SfCartesianChart(
+                margin: const EdgeInsets.all(15),
                   tooltipBehavior: TooltipBehavior(enable: true),
                   primaryXAxis: CategoryAxis(
                     majorGridLines: const MajorGridLines(width: 0),
@@ -274,7 +277,10 @@ class _HomeState extends State<Home> {
               ),
             ),
             const SizedBox(height: 20,),
-            const Text("Transaction modes",style: TextStyle(fontWeight: FontWeight.bold),),
+            const Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Text("Transaction modes",style: TextStyle(fontWeight: FontWeight.bold),),
+            ),
             const SizedBox(height: 20,),
             SizedBox(
               height: 300,
@@ -282,7 +288,7 @@ class _HomeState extends State<Home> {
                   tooltipBehavior: TooltipBehavior(
                     enable: true,
                     format: 'point.x: ₹point.y',
-                    textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   series: <CircularSeries>[
                     // Render pie chart
@@ -295,7 +301,7 @@ class _HomeState extends State<Home> {
                         pointColorMapper: (TxnCategory data, _) => data.color,
                         dataLabelSettings: const DataLabelSettings(
                             isVisible: true,
-                          textStyle: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18)
+                          textStyle: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)
                         )
                     )
                   ]
@@ -307,12 +313,46 @@ class _HomeState extends State<Home> {
     );
   }
 
+  Widget getIncomeExpenseScreen() {
+    return Scaffold(
+      appBar: AppBar(
+        titleTextStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        title: const Text("Income & Expenses"),
+      ),
+      body: ListView.builder(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(top: 30),
+        itemCount: allTxn.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            onTap: (){},
+            leading: allTxn[index]["type"]=="income"?
+            const RotatedBox(quarterTurns: 2,child: Icon(
+              Icons.arrow_outward,
+              color: Colors.green,
+            ),)
+            :const Icon(
+              Icons.arrow_outward,
+              color: Colors.red,
+            ),
+            isThreeLine: true,
+            title: Text(allTxn[index]["type"]=="income"?"Added to Balance":allTxn[index]["item"], style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
+            trailing: Text("₹${allTxn[index]["amount"]!}", style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold)),
+            subtitle: Text(allTxn[index]["date"], style: const TextStyle(fontSize: 13,fontWeight: FontWeight.bold),),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-        length: 2,
+        initialIndex: 1,
+        length: 3,
         child: TabBarView(
           children: [
+            getIncomeExpenseScreen(),
             getHomeScreen(),
             getAnalyticsScreen()
           ],

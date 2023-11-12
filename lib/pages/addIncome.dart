@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:income_track/services/dbServices.dart';
 import 'package:intl/intl.dart';
 
 class AddIncome extends StatefulWidget {
-  const AddIncome({super.key});
+  final Map args;
+  const AddIncome({super.key, required this.args});
 
   @override
   State<AddIncome> createState() => _AddIncomeState();
@@ -11,11 +13,12 @@ class AddIncome extends StatefulWidget {
 class _AddIncomeState extends State<AddIncome> {
 
   final formKey = GlobalKey<FormState>();
+  late DBService dbService;
 
   DateTime selectedDate = DateTime.now();
   List<Map> eItems = [];
-  DateFormat dateFormat = DateFormat("dd/MM/yyyy");
-  TextEditingController date = TextEditingController(text: DateFormat("dd/MM/yyyy").format(DateTime.now())),
+  DateFormat dateFormat = DateFormat("yyyy-MM-dd");
+  TextEditingController date = TextEditingController(text: DateFormat("yyyy-MM-dd").format(DateTime.now())),
       amount = TextEditingController(text: "");
 
   Future<void> selectDate()async{
@@ -77,6 +80,12 @@ class _AddIncomeState extends State<AddIncome> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    dbService = widget.args["dbObject"];
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
@@ -131,11 +140,23 @@ class _AddIncomeState extends State<AddIncome> {
                         width: double.infinity,
                         child: TextButton(
                           onPressed: ()async{
-                            showLoading(context);
-                            Future.delayed(const Duration(seconds: 5), (){
+                            FocusScope.of(context).unfocus();
+                            if(date.text.isEmpty || amount.text.isEmpty) {
+                              alertDialog("Please complete the form");
+                            }
+                            else {
+                              showLoading(context);
+                              dynamic response = await dbService.addIncome(date: date.text, amount: amount.text);
+                              if(!context.mounted) return;
                               Navigator.pop(context);
-                              alertDialog("Added Successfully");
-                            });
+                              if(response == "done") {
+                                amount.clear();
+                                alertDialog("Added Successfully");
+                              }
+                              else {
+                                alertDialog("Error adding spend");
+                              }
+                            }
                           },
                           style: TextButton.styleFrom(
                               backgroundColor: Colors.white,
