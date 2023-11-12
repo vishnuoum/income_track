@@ -1,5 +1,6 @@
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
+import 'package:income_track/pages/addSpend.dart';
 import 'package:income_track/pages/home.dart';
 import 'package:income_track/pages/init.dart';
 
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routes: {
         "/home" : (context) => Home(args: ModalRoute.of(context)!.settings.arguments as Map),
+        "/addSpend" : (context) => const AddSpend(),
         "/" : (context) => const Init()
       },
       initialRoute: "/",
