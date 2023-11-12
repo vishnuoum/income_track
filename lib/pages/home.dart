@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:income_track/chart/IncomeExpenseMonthly.dart';
 import 'package:income_track/chart/TxnCategory.dart';
+import 'package:income_track/services/dbServices.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'dart:developer';
 
 class Home extends StatefulWidget {
   final Map args;
@@ -15,21 +17,11 @@ class _HomeState extends State<Home> {
 
   int selector = 0;
   String barChartTitle = "Your spends this month";
+  late DBService dbService;
+  String amount = "0.0";
+  dynamic response;
 
-  List<Map<String,String>> data = [
-    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-  ];
+  List<Map> data = [];
 
   List<IncomeExpenseMonthly> barChartData = [
     IncomeExpenseMonthly(label: 'Jan', income: 35, expense: 10),
@@ -46,7 +38,38 @@ class _HomeState extends State<Home> {
 
   @override
   void initState() {
+    dbService = widget.args["dbObject"];
+    loadHome();
     super.initState();
+  }
+
+  void loadHome() async {
+    // Load Recent spends
+    response = await dbService.getRecentSpends();
+    if(response != "error") {
+      data = response;
+    }
+
+    // Load Amount
+    response = await dbService.getThisMonthSpend();
+    if(response != "error") {
+      amount = response;
+    }
+
+    // Load monthly data
+    response = await dbService.getMonthlyStats();
+    if(response != "error") {
+      barChartData = response;
+    }
+
+    // Load all pie data
+    response = await dbService.getAllPie();
+    if(response != "error") {
+      pieChartData = response;
+    }
+
+    setState(() {});
+
   }
 
   Widget getHomeScreen() {
@@ -69,11 +92,12 @@ class _HomeState extends State<Home> {
                 children: [
                   const Text("This month spend"),
                   const SizedBox(height: 15,),
-                  const Text("₹20000.00",style: TextStyle(fontSize: 40),),
+                  Text("₹$amount",style: const TextStyle(fontSize: 40),),
                   const SizedBox(height: 15,),
                   TextButton.icon(onPressed: ()async{
-                    await Navigator.pushNamed(context, "/addSpend");
-                  }, icon: const Icon(Icons.add), label: const Text("Add Spend")),
+                    await Navigator.pushNamed(context, "/addSpend", arguments: {"dbObject":dbService});
+                    loadHome();
+                    }, icon: const Icon(Icons.add), label: const Text("Add Spend")),
                 ],
               ),
             ),
@@ -95,10 +119,9 @@ class _HomeState extends State<Home> {
                         child: ListView.builder(
                           physics: const BouncingScrollPhysics(),
                           padding: const EdgeInsets.all(20),
-                          itemCount: data.length,
+                          itemCount: data.length+1,
                           itemBuilder: (context, index) {
                             if(index == 0) {
-                              index--;
                               return Center(
                                   child: Padding(
                                     padding: const EdgeInsets.only(bottom: 25, top: 15),
@@ -106,6 +129,7 @@ class _HomeState extends State<Home> {
                                   )
                               );
                             }
+                            index--;
                             return ListTile(
                               leading: Text(
                                 data[index]["txnMode"]!,
@@ -136,7 +160,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
           children: [
             const Padding(
               padding: EdgeInsets.only(left: 10.0,bottom: 25, top: 8),
@@ -253,7 +277,11 @@ class _HomeState extends State<Home> {
             SizedBox(
               height: 300,
               child: SfCircularChart(
-                  tooltipBehavior: TooltipBehavior(enable: true),
+                  tooltipBehavior: TooltipBehavior(
+                    enable: true,
+                    format: 'point.x: ₹point.y',
+                    textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   series: <CircularSeries>[
                     // Render pie chart
                     PieSeries<TxnCategory, String>(
@@ -265,7 +293,7 @@ class _HomeState extends State<Home> {
                         pointColorMapper: (TxnCategory data, _) => data.color,
                         dataLabelSettings: const DataLabelSettings(
                             isVisible: true,
-                          textStyle: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)
+                          textStyle: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18)
                         )
                     )
                   ]

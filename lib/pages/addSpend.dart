@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:income_track/services/dbServices.dart';
 import 'package:intl/intl.dart';
 
 class AddSpend extends StatefulWidget {
-  const AddSpend({super.key});
+  final Map args;
+  const AddSpend({super.key, required this.args});
 
   @override
   State<AddSpend> createState() => _AddSpendState();
@@ -11,14 +13,17 @@ class AddSpend extends StatefulWidget {
 class _AddSpendState extends State<AddSpend> {
 
   final formKey = GlobalKey<FormState>();
+  dynamic id;
+  late DBService dbService;
 
   DateTime selectedDate = DateTime.now();
   List<Map> eItems = [];
-  DateFormat dateFormat = DateFormat("dd/MM/yyyy");
-  TextEditingController date = TextEditingController(text: DateFormat("dd/MM/yyyy").format(DateTime.now())),
+  DateFormat dateFormat = DateFormat("yyyy-MM-dd");
+  TextEditingController date = TextEditingController(text: DateFormat("yyyy-MM-dd").format(DateTime.now())),
       amount = TextEditingController(text: ""),
       item = TextEditingController(text: ""),
-      category = TextEditingController(text: "");
+      category = TextEditingController(text: ""),
+      txnMode = TextEditingController(text: "");
 
   Future<void> selectDate()async{
     selectedDate = (await showDatePicker(context: context,
@@ -76,6 +81,12 @@ class _AddSpendState extends State<AddSpend> {
     showDialog(context: context,builder:(BuildContext context){
       return WillPopScope(onWillPop: ()async => false,child: alert);
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    dbService = widget.args["dbObject"];
   }
 
   @override
@@ -144,7 +155,7 @@ class _AddSpendState extends State<AddSpend> {
                       const Text("Txn Mode"),
                       const SizedBox(height: 10,),
                       TextFormField(
-                        controller: item,
+                        controller: txnMode,
                         decoration: InputDecoration(
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -172,11 +183,26 @@ class _AddSpendState extends State<AddSpend> {
                         width: double.infinity,
                         child: TextButton(
                           onPressed: ()async{
-                            showLoading(context);
-                            Future.delayed(Duration(seconds: 5), (){
+                            FocusScope.of(context).unfocus();
+                            if(date.text.isEmpty || item.text.isEmpty || category.text.isEmpty || txnMode.text.isEmpty || amount.text.isEmpty) {
+                              alertDialog("Please complete the form");
+                            }
+                            else {
+                              showLoading(context);
+                              dynamic response = await dbService.addSpend(date: date.text, item: item.text, category: category.text, txnMode: txnMode.text, amount: amount.text);
+                              if(!context.mounted) return;
                               Navigator.pop(context);
-                              alertDialog("Added Successfully");
-                            });
+                              if(response == "done") {
+                                item.clear();
+                                category.clear();
+                                txnMode.clear();
+                                amount.clear();
+                                alertDialog("Added Successfully");
+                              }
+                              else {
+                                alertDialog("Error adding spend");
+                              }
+                            }
                           },
                           style: TextButton.styleFrom(
                             backgroundColor: Colors.white,

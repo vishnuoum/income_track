@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routes: {
         "/home" : (context) => Home(args: ModalRoute.of(context)!.settings.arguments as Map),
-        "/addSpend" : (context) => const AddSpend(),
+        "/addSpend" : (context) => AddSpend(args: ModalRoute.of(context)!.settings.arguments as Map),
         "/" : (context) => const Init()
       },
       initialRoute: "/",
