@@ -30,8 +30,7 @@ class _HomeState extends State<Home> {
     super.initState();
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget getHomeScreen() {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Home", style: TextStyle(fontWeight: FontWeight.bold),),
@@ -44,7 +43,7 @@ class _HomeState extends State<Home> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 60,),
-             Align(
+            Align(
               alignment: Alignment.center,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -66,8 +65,8 @@ class _HomeState extends State<Home> {
                 child: Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(topRight: Radius.circular(20), topLeft: Radius.circular(20))
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(topRight: Radius.circular(20), topLeft: Radius.circular(20))
                   ),
                   child: data.isEmpty?Center(
                     child: Text("No Recent Spends", style: TextStyle(color: Colors.grey[700],fontWeight: FontWeight.bold),),
@@ -82,10 +81,10 @@ class _HomeState extends State<Home> {
                             if(index == 0) {
                               index--;
                               return Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 25, top: 15),
-                                  child: Text("Your recent spends", style: TextStyle(color: Colors.grey[700],fontWeight: FontWeight.bold),),
-                                )
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 25, top: 15),
+                                    child: Text("Your recent spends", style: TextStyle(color: Colors.grey[700],fontWeight: FontWeight.bold),),
+                                  )
                               );
                             }
                             return ListTile(
@@ -111,6 +110,19 @@ class _HomeState extends State<Home> {
           ],
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+        length: 2,
+        child: TabBarView(
+          children: [
+            getHomeScreen(),
+            getHomeScreen()
+          ],
+        )
     );
   }
 }
