@@ -54,7 +54,9 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         title: const Text("Home", style: TextStyle(fontWeight: FontWeight.bold),),
         actions: [
-          IconButton(onPressed: (){},icon: const Icon(Icons.more_vert))
+          IconButton(onPressed: ()async{
+            await Navigator.pushNamed(context, "/addIncome");
+          },icon: const Icon(Icons.more_vert))
         ],
       ),
       body: SafeArea(
