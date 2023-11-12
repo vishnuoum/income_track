@@ -300,7 +300,7 @@ class _HomeState extends State<Home> {
                         pointColorMapper: (TxnCategory data, _) => data.color,
                         dataLabelSettings: const DataLabelSettings(
                             isVisible: true,
-                          textStyle: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18)
+                          textStyle: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)
                         )
                     )
                   ]
