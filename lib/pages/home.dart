@@ -56,14 +56,38 @@ class _HomeState extends State<Home> {
       balance = response;
     }
 
-    // Load monthly data
-    response = await dbService.getMonthlyStats();
+    // Load bar chart data
+    switch(selector){
+      case 0:
+        response = await dbService.getThisMonthStats();
+        break;
+      case 1:
+        response = await dbService.getThisYearStats();
+        break;
+      case 2:
+        response = await dbService.getMonthlyStats();
+        break;
+      case 3:
+        response = await dbService.getYearlyStats();
+        break;
+    }
     if(response != "error") {
       barChartData = response;
     }
 
-    // Load all pie data
-    response = await dbService.getAllPie();
+    // Load pie data
+    switch(selector) {
+      case 0:
+        response = await dbService.getThisMonthPie();
+        break;
+      case 1:
+        response = await dbService.getThisYearPie();
+        break;
+      case 2:
+      case 3:
+        response = await dbService.getAllPie();
+        break;
+    }
     if(response != "error") {
       pieChartData = response;
     }
@@ -221,10 +245,19 @@ class _HomeState extends State<Home> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 5),
                     child: TextButton(
-                      onPressed: (){
+                      onPressed: () async {
                         setState(() {
                           selector = 0;
                         });
+                        response = await dbService.getThisMonthStats();
+                        if(response !="error") {
+                          barChartData = response;
+                        }
+                        response = await dbService.getThisMonthPie();
+                        if(response !="error") {
+                          pieChartData = response;
+                        }
+                        setState(() {});
                       },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -237,10 +270,19 @@ class _HomeState extends State<Home> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 5),
                     child: TextButton(
-                      onPressed: (){
+                      onPressed: () async {
                         setState(() {
                           selector = 1;
                         });
+                        response = await dbService.getThisYearStats();
+                        if(response !="error") {
+                          barChartData = response;
+                        }
+                        response = await dbService.getThisYearPie();
+                        if(response !="error") {
+                          pieChartData = response;
+                        }
+                        setState(() {});
                       },
                       style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -253,10 +295,19 @@ class _HomeState extends State<Home> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 5),
                     child: TextButton(
-                      onPressed: (){
+                      onPressed: ()async {
                         setState(() {
                           selector = 2;
                         });
+                        response = await dbService.getMonthlyStats();
+                        if(response !="error") {
+                          barChartData = response;
+                        }
+                        response = await dbService.getAllPie();
+                        if(response !="error") {
+                          pieChartData = response;
+                        }
+                        setState(() {});
                       },
                       style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -269,10 +320,19 @@ class _HomeState extends State<Home> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 5),
                     child: TextButton(
-                      onPressed: (){
+                      onPressed: () async {
                         setState(() {
                           selector = 3;
                         });
+                        response = await dbService.getYearlyStats();
+                        if(response !="error") {
+                          barChartData = response;
+                        }
+                        response = await dbService.getAllPie();
+                        if(response !="error") {
+                          pieChartData = response;
+                        }
+                        setState(() {});
                       },
                       style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -295,7 +355,10 @@ class _HomeState extends State<Home> {
               height: 300,
               child: SfCartesianChart(
                 margin: const EdgeInsets.all(15),
-                  tooltipBehavior: TooltipBehavior(enable: true),
+                  tooltipBehavior: TooltipBehavior(
+                    enable: true,
+                    format: 'point.x: ₹point.y',
+                  ),
                   primaryXAxis: CategoryAxis(
                     majorGridLines: const MajorGridLines(width: 0),
                   ),
@@ -363,7 +426,16 @@ class _HomeState extends State<Home> {
         titleTextStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         title: const Text("Income & Expenses"),
       ),
-      body: ListView.builder(
+      body: allTxn.isEmpty?
+      const Center(
+        child: Text("No transactions to show",
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey
+          ),
+        ),
+      ):
+      ListView.builder(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.only(top: 30),
         itemCount: allTxn.length,
