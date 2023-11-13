@@ -72,7 +72,7 @@ class DBService {
   Future<dynamic> getRecentSpends() async {
     try {
       List<Map> list = await database.rawQuery(
-          "Select * from spend order by id desc limit 10");
+          "Select * from spend where date >= date('now', 'start of month') order by date desc,time desc");
       log('getRecentSpends() queries: $list');
         return list;
     }
@@ -321,7 +321,7 @@ class DBService {
         Select id, date, time, amount, item, category, txnMode,"spend" as type from spend 
         union
         Select id, date, time, amount, '' as item, '' as category, '' as txnMode,"income" as type  from income
-        order by time desc
+        order by date desc,time desc
         """
       );
       log('getAllTxn() queries: $data');
