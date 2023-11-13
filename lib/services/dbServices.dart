@@ -98,7 +98,7 @@ class DBService {
 
   Future<String> getBalance() async {
     try {
-      List<Map> temp = await database.rawQuery("Select (select sum(amount) from income) - (select sum(amount) from spend) as balance");
+      List<Map> temp = await database.rawQuery("Select (select coalesce(sum(amount),0.0) from income) - (select coalesce(sum(amount),0.0) from spend) as balance");
       String amount = temp[0]["balance"].toString();
       log('getBalance() queries: $amount');
       return amount;
