@@ -18,7 +18,9 @@ class _HomeState extends State<Home> {
   String barChartTitle = "Your spends this month";
   late DBService dbService;
   String amount = "0.0";
+  String balance = "0.0";
   dynamic response;
+  String active = "spend";
 
   List<Map> data = [];
 
@@ -48,6 +50,12 @@ class _HomeState extends State<Home> {
       amount = response;
     }
 
+    // Load Balance
+    response = await dbService.getBalance();
+    if(response != "error") {
+      balance = response;
+    }
+
     // Load monthly data
     response = await dbService.getMonthlyStats();
     if(response != "error") {
@@ -74,10 +82,7 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         title: const Text("Home", style: TextStyle(fontWeight: FontWeight.bold),),
         actions: [
-          IconButton(onPressed: ()async{
-            await Navigator.pushNamed(context, "/addIncome" ,arguments: {"dbObject":dbService});
-            loadHome();
-          },icon: const Icon(Icons.more_vert))
+          IconButton(onPressed: ()async{},icon: const Icon(Icons.more_vert))
         ],
       ),
       body: SafeArea(
@@ -87,18 +92,58 @@ class _HomeState extends State<Home> {
             const SizedBox(height: 60,),
             Align(
               alignment: Alignment.center,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text("This month spend"),
-                  const SizedBox(height: 15,),
-                  Text("₹$amount",style: const TextStyle(fontSize: 40),),
-                  const SizedBox(height: 15,),
-                  TextButton.icon(onPressed: ()async{
-                    await Navigator.pushNamed(context, "/addSpend", arguments: {"dbObject":dbService});
-                    loadHome();
-                    }, icon: const Icon(Icons.add), label: const Text("Add Spend")),
-                ],
+              child: GestureDetector(
+                onTap: (){},
+                onDoubleTap: (){
+                  if(active == "spend") {
+                    active = "balance";
+                  }
+                  else if(active == "balance") {
+                    active = "spend";
+                  }
+                  setState((){});
+                },
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 500),
+                  reverseDuration: const Duration(milliseconds: 0),
+                  switchInCurve: Curves.fastOutSlowIn,
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    return ScaleTransition(
+                        filterQuality: FilterQuality.high,
+                        scale: animation, child: child
+                    );
+                  },
+                  child: active=="spend"?
+                  Column(
+                    key: ValueKey<String>(active),
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text("This month spend"),
+                      const SizedBox(height: 15,),
+                      Text("₹$amount",style: const TextStyle(fontSize: 40),),
+                      const SizedBox(height: 15,),
+                      TextButton.icon(onPressed: ()async{
+                        await Navigator.pushNamed(context, "/addSpend", arguments: {"dbObject":dbService});
+                        loadHome();
+                      }, icon: const Icon(Icons.add), label: const Text("Add Spend")),
+                    ],
+                  ):
+                  Column(
+                    key: ValueKey<String>(active),
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text("Your Balance"),
+                      const SizedBox(height: 15,),
+                      Text("₹$balance",style: const TextStyle(fontSize: 40),),
+                      const SizedBox(height: 15,),
+                      TextButton.icon(onPressed: ()async{
+                        await Navigator.pushNamed(context, "/addIncome", arguments: {"dbObject":dbService});
+                        loadHome();
+                      }, icon: const Icon(Icons.add), label: const Text("Add Income")),
+                    ],
+                  ),
+                )
+                ,
               ),
             ),
             const SizedBox(height: 30,),
@@ -324,7 +369,16 @@ class _HomeState extends State<Home> {
         itemCount: allTxn.length,
         itemBuilder: (context, index) {
           return ListTile(
-            onTap: (){},
+            onLongPress: ()async{
+              if(allTxn[index]["type"]=="income") {
+                await Navigator.pushNamed(context, "/addIncome", arguments: {"dbObject":dbService,"updateData":allTxn[index]});
+                loadHome();
+              }
+              else {
+                await Navigator.pushNamed(context, "/addSpend", arguments: {"dbObject":dbService,"updateData":allTxn[index]});
+                loadHome();
+              }
+            },
             leading: allTxn[index]["type"]=="income"?
             const RotatedBox(quarterTurns: 2,child: Icon(
               Icons.arrow_outward,

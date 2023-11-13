@@ -34,7 +34,12 @@ class DBService {
     try {
       await database.transaction((txn) async {
         int id = await txn.rawInsert(
-            "INSERT INTO spend (id, date, time, item, category, txnMode, amount) VALUES($entryId, '$date', time('now'), '$item', '$category', '$txnMode', $amount)");
+            """
+            INSERT INTO spend (id, date, time, item, category, txnMode, amount) VALUES($entryId, '$date', time('now', 'localtime'), '$item', '$category', '$txnMode', $amount)
+            ON CONFLICT(id) DO
+            UPDATE SET date = '$date', item = '$item', category = '$category', txnMode = '$txnMode', amount = $amount
+            """
+        );
         log('addSpend() inserted: $id');
       });
       return "done";
@@ -49,7 +54,11 @@ class DBService {
     try {
       await database.transaction((txn) async {
         int id = await txn.rawInsert(
-            "INSERT INTO income(id, date, time, amount) VALUES($entryId, '$date', time('now'), $amount)");
+            """
+            INSERT INTO income(id, date, time, amount) VALUES($entryId, '$date', time('now','localtime'), $amount)
+            ON CONFLICT(id) DO
+            UPDATE SET date = '$date', amount = $amount
+            """);
         log('addIncome() inserted: $id');
       });
       return "done";
@@ -83,6 +92,19 @@ class DBService {
     }
     catch(error){
       log("getThisMonthSpend() error: $error");
+      return "error";
+    }
+  }
+
+  Future<String> getBalance() async {
+    try {
+      List<Map> temp = await database.rawQuery("Select (select sum(amount) from income) - (select sum(amount) from spend) as balance");
+      String amount = temp[0]["balance"].toString();
+      log('getBalance() queries: $amount');
+      return amount;
+    }
+    catch(error){
+      log("getBalance() error: $error");
       return "error";
     }
   }

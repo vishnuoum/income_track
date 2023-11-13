@@ -54,6 +54,9 @@ class _AddSpendState extends State<AddSpend> {
             TextButton(
               child: const Text('Ok'),
               onPressed: () {
+                if(widget.args.containsKey("updateData")) {
+                  Navigator.of(context).pop();
+                }
                 Navigator.of(context).pop();
               },
             ),
@@ -87,6 +90,14 @@ class _AddSpendState extends State<AddSpend> {
   void initState() {
     super.initState();
     dbService = widget.args["dbObject"];
+    if(widget.args.containsKey("updateData")){
+      id = widget.args["updateData"]["id"];
+      item.text = widget.args["updateData"]["item"];
+      category.text = widget.args["updateData"]["category"];
+      amount.text = widget.args["updateData"]["amount"].toString();
+      txnMode.text = widget.args["updateData"]["txnMode"];
+      setState(() {});
+    }
   }
 
   @override
@@ -189,7 +200,7 @@ class _AddSpendState extends State<AddSpend> {
                             }
                             else {
                               showLoading(context);
-                              dynamic response = await dbService.addSpend(date: date.text, item: item.text, category: category.text, txnMode: txnMode.text, amount: amount.text);
+                              dynamic response = await dbService.addSpend(entryId: id, date: date.text, item: item.text, category: category.text, txnMode: txnMode.text, amount: amount.text);
                               if(!context.mounted) return;
                               Navigator.pop(context);
                               if(response == "done") {
@@ -198,6 +209,7 @@ class _AddSpendState extends State<AddSpend> {
                                 txnMode.clear();
                                 amount.clear();
                                 alertDialog("Added Successfully");
+                                id = null;
                               }
                               else {
                                 alertDialog("Error adding spend");

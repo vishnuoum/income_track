@@ -14,6 +14,7 @@ class _AddIncomeState extends State<AddIncome> {
 
   final formKey = GlobalKey<FormState>();
   late DBService dbService;
+  dynamic id;
 
   DateTime selectedDate = DateTime.now();
   List<Map> eItems = [];
@@ -50,6 +51,9 @@ class _AddIncomeState extends State<AddIncome> {
             TextButton(
               child: const Text('Ok'),
               onPressed: () {
+                if(widget.args.containsKey("updateData")) {
+                  Navigator.of(context).pop();
+                }
                 Navigator.of(context).pop();
               },
             ),
@@ -83,6 +87,12 @@ class _AddIncomeState extends State<AddIncome> {
   void initState() {
     super.initState();
     dbService = widget.args["dbObject"];
+    if(widget.args.containsKey("updateData")) {
+      date.text = widget.args["updateData"]["date"];
+      amount.text = widget.args["updateData"]["amount"].toString();
+      id = widget.args["updateData"]["id"];
+      setState(() {});
+    }
   }
 
   @override
@@ -146,12 +156,13 @@ class _AddIncomeState extends State<AddIncome> {
                             }
                             else {
                               showLoading(context);
-                              dynamic response = await dbService.addIncome(date: date.text, amount: amount.text);
+                              dynamic response = await dbService.addIncome(entryId: id, date: date.text, amount: amount.text);
                               if(!context.mounted) return;
                               Navigator.pop(context);
                               if(response == "done") {
                                 amount.clear();
                                 alertDialog("Added Successfully");
+                                id = null;
                               }
                               else {
                                 alertDialog("Error adding spend");
