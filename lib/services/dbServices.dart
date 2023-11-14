@@ -332,4 +332,82 @@ class DBService {
       return "error";
     }
   }
+
+  Future<dynamic> getCategoryByThisMonth() async {
+    try {
+      List<Map> data = await database.rawQuery(
+          """
+          with categorySequence as (
+            Select sum(amount) as amount,
+            category  from spend 
+            where date between 
+              date('now', 'start of month') and 
+              date('now', 'start of month','+1 month', '-1 day') 
+            group by category
+          )
+          
+          Select amount, category, 
+          round(amount/(Select sum(amount) from categorySequence),4) as percent 
+          from categorySequence
+          """
+      );
+      log('getCategoryByThisMonth() queries: $data');
+      return data;
+    }
+    catch(error){
+      log("getCategoryByThisMonth() error: $error");
+      return "error";
+    }
+  }
+
+  Future<dynamic> getCategoryByThisYear() async {
+    try {
+      List<Map> data = await database.rawQuery(
+          """
+          with categorySequence as (
+            Select sum(amount) as amount,
+            category  from spend 
+            where date between 
+              date('now', 'start of year') and 
+              date('now', 'start of year','+1 year', '-1 day') 
+            group by category
+          )
+          
+          Select amount, category, 
+          round(amount/(Select sum(amount) from categorySequence),4) as percent 
+          from categorySequence
+          """
+      );
+      log('getCategoryByThisYear() queries: $data');
+      return data;
+    }
+    catch(error){
+      log("getCategoryByThisYear() error: $error");
+      return "error";
+    }
+  }
+
+  Future<dynamic> getCategoryAll() async {
+    try {
+      List<Map> data = await database.rawQuery(
+          """
+          with categorySequence as (
+            Select sum(amount) as amount,
+            category  from spend
+            group by category
+          )
+          
+          Select amount, category, 
+          round(amount/(Select sum(amount) from categorySequence),4) as percent 
+          from categorySequence
+          """
+      );
+      log('getCategoryByThisYear() queries: $data');
+      return data;
+    }
+    catch(error){
+      log("getCategoryByThisYear() error: $error");
+      return "error";
+    }
+  }
 }

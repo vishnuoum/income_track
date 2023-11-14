@@ -30,6 +30,8 @@ class _HomeState extends State<Home> {
 
   List<TxnCategory> pieChartData = [];
 
+  List<Map> analyticsByCategory = [];
+
   @override
   void initState() {
     dbService = widget.args["dbObject"];
@@ -90,6 +92,24 @@ class _HomeState extends State<Home> {
     }
     if(response != "error") {
       pieChartData = response;
+    }
+
+    // Load analytics by category
+    switch(selector) {
+      case 0:
+        response = await dbService.getCategoryByThisMonth();
+        break;
+      case 1:
+        response = await dbService.getCategoryByThisYear();
+        break;
+      case 2:
+      case 3:
+        response = await dbService.getCategoryAll();
+        break;
+    }
+    print(response);
+    if(response != "error") {
+      analyticsByCategory = response;
     }
 
     // Load all txn
@@ -257,6 +277,10 @@ class _HomeState extends State<Home> {
                         if(response !="error") {
                           pieChartData = response;
                         }
+                        response = await dbService.getCategoryByThisMonth();
+                        if(response !="error") {
+                          analyticsByCategory = response;
+                        }
                         setState(() {});
                       },
                       style: TextButton.styleFrom(
@@ -281,6 +305,10 @@ class _HomeState extends State<Home> {
                         response = await dbService.getThisYearPie();
                         if(response !="error") {
                           pieChartData = response;
+                        }
+                        response = await dbService.getCategoryByThisYear();
+                        if(response !="error") {
+                          analyticsByCategory = response;
                         }
                         setState(() {});
                       },
@@ -307,6 +335,10 @@ class _HomeState extends State<Home> {
                         if(response !="error") {
                           pieChartData = response;
                         }
+                        response = await dbService.getCategoryAll();
+                        if(response !="error") {
+                          analyticsByCategory = response;
+                        }
                         setState(() {});
                       },
                       style: TextButton.styleFrom(
@@ -331,6 +363,10 @@ class _HomeState extends State<Home> {
                         response = await dbService.getAllPie();
                         if(response !="error") {
                           pieChartData = response;
+                        }
+                        response = await dbService.getCategoryAll();
+                        if(response !="error") {
+                          analyticsByCategory = response;
                         }
                         setState(() {});
                       },
@@ -412,6 +448,53 @@ class _HomeState extends State<Home> {
                         )
                     )
                   ]
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(15),
+              decoration: const BoxDecoration(
+                color: Colors.white
+              ),
+              constraints: const BoxConstraints(
+                minHeight: 200,
+                minWidth: double.infinity
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Analytics by Category",
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  const SizedBox(height: 20,),
+                  ListView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: analyticsByCategory.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        titleTextStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                        title: Text(analyticsByCategory[index]["category"]),
+                        subtitle: LinearProgressIndicator(
+                          value: analyticsByCategory[index]["percent"],
+                          color: Colors.black,
+                          backgroundColor: Colors.grey,
+                        ),
+                        isThreeLine: true,
+                        trailing: Column(
+                          children: [
+                            Text("₹${analyticsByCategory[index]["amount"]}", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),),
+                            const SizedBox(height: 5,),
+                            Text("${(analyticsByCategory[index]["percent"]*100).toStringAsFixed(2)}%", style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),)
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                ],
               ),
             )
           ],
