@@ -107,7 +107,6 @@ class _HomeState extends State<Home> {
         response = await dbService.getCategoryAll();
         break;
     }
-    print(response);
     if(response != "error") {
       analyticsByCategory = response;
     }
@@ -119,6 +118,40 @@ class _HomeState extends State<Home> {
     }
     setState(() {});
 
+  }
+
+  Future<void> deleteDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Alert'),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text("Proceed to delete this entry?"),
+              ],
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.end,
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Yes'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('No'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget getHomeScreen() {
@@ -523,30 +556,35 @@ class _HomeState extends State<Home> {
         padding: const EdgeInsets.only(top: 30),
         itemCount: allTxn.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            onLongPress: ()async{
-              if(allTxn[index]["type"]=="income") {
-                await Navigator.pushNamed(context, "/addIncome", arguments: {"dbObject":dbService,"updateData":allTxn[index]});
-                loadHome();
-              }
-              else {
-                await Navigator.pushNamed(context, "/addSpend", arguments: {"dbObject":dbService,"updateData":allTxn[index]});
-                loadHome();
-              }
+          return GestureDetector(
+            onDoubleTap: (){
+              deleteDialog();
             },
-            leading: allTxn[index]["type"]=="income"?
-            const RotatedBox(quarterTurns: 2,child: Icon(
-              Icons.arrow_outward,
-              color: Colors.green,
-            ),)
-            :const Icon(
-              Icons.arrow_outward,
-              color: Colors.red,
+            child: ListTile(
+              onLongPress: ()async{
+                if(allTxn[index]["type"]=="income") {
+                  await Navigator.pushNamed(context, "/addIncome", arguments: {"dbObject":dbService,"updateData":allTxn[index]});
+                  loadHome();
+                }
+                else {
+                  await Navigator.pushNamed(context, "/addSpend", arguments: {"dbObject":dbService,"updateData":allTxn[index]});
+                  loadHome();
+                }
+              },
+              leading: allTxn[index]["type"]=="income"?
+              const RotatedBox(quarterTurns: 2,child: Icon(
+                Icons.arrow_outward,
+                color: Colors.green,
+              ),)
+              :const Icon(
+                Icons.arrow_outward,
+                color: Colors.red,
+              ),
+              isThreeLine: true,
+              title: Text(allTxn[index]["type"]=="income"?"Added to Balance":allTxn[index]["item"], style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
+              trailing: Text("₹${allTxn[index]["amount"]!}", style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold)),
+              subtitle: Text(allTxn[index]["date"], style: const TextStyle(fontSize: 13,fontWeight: FontWeight.bold),),
             ),
-            isThreeLine: true,
-            title: Text(allTxn[index]["type"]=="income"?"Added to Balance":allTxn[index]["item"], style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
-            trailing: Text("₹${allTxn[index]["amount"]!}", style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold)),
-            subtitle: Text(allTxn[index]["date"], style: const TextStyle(fontSize: 13,fontWeight: FontWeight.bold),),
           );
         },
       ),
