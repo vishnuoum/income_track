@@ -15,7 +15,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
 
   int selector = 0;
-  String barChartTitle = "Your spends this month";
+  String barChartTitle = "Your transactions this month";
   late DBService dbService;
   String amount = "0.0";
   String balance = "0.0";
@@ -62,15 +62,19 @@ class _HomeState extends State<Home> {
     switch(selector){
       case 0:
         response = await dbService.getThisMonthStats();
+        barChartTitle = "Your transactions this month";
         break;
       case 1:
         response = await dbService.getThisYearStats();
+        barChartTitle = "Your transactions this year";
         break;
       case 2:
         response = await dbService.getMonthlyStats();
+        barChartTitle = "Your monthly transactions";
         break;
       case 3:
         response = await dbService.getYearlyStats();
+        barChartTitle = "Your early transactions";
         break;
     }
     if(response != "error") {
@@ -120,35 +124,38 @@ class _HomeState extends State<Home> {
 
   }
 
-  Future<void> deleteDialog() async {
-    return showDialog<void>(
+  Future<dynamic> deleteDialog() async {
+    return showDialog<dynamic>(
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Alert'),
-          content: const SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text("Proceed to delete this entry?"),
-              ],
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            title: const Text('Alert'),
+            content: const SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Text("Proceed to delete this entry?"),
+                ],
+              ),
             ),
+            actionsAlignment: MainAxisAlignment.end,
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Yes'),
+                onPressed: () {
+                  Navigator.pop(context, true);
+                },
+              ),
+              TextButton(
+                child: const Text('No'),
+                onPressed: () {
+                  Navigator.pop(context, false);
+                },
+              ),
+            ],
           ),
-          actionsAlignment: MainAxisAlignment.end,
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Yes'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('No'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
         );
       },
     );
@@ -302,6 +309,7 @@ class _HomeState extends State<Home> {
                         setState(() {
                           selector = 0;
                         });
+                        barChartTitle = "Your transactions this month";
                         response = await dbService.getThisMonthStats();
                         if(response !="error") {
                           barChartData = response;
@@ -331,6 +339,7 @@ class _HomeState extends State<Home> {
                         setState(() {
                           selector = 1;
                         });
+                        barChartTitle = "Your transactions this year";
                         response = await dbService.getThisYearStats();
                         if(response !="error") {
                           barChartData = response;
@@ -360,6 +369,7 @@ class _HomeState extends State<Home> {
                         setState(() {
                           selector = 2;
                         });
+                        barChartTitle = "Your monthly transactions";
                         response = await dbService.getMonthlyStats();
                         if(response !="error") {
                           barChartData = response;
@@ -389,6 +399,7 @@ class _HomeState extends State<Home> {
                         setState(() {
                           selector = 3;
                         });
+                        barChartTitle = "Your yearly transactions";
                         response = await dbService.getYearlyStats();
                         if(response !="error") {
                           barChartData = response;
@@ -423,6 +434,11 @@ class _HomeState extends State<Home> {
             SizedBox(
               height: 300,
               child: SfCartesianChart(
+                zoomPanBehavior: ZoomPanBehavior(
+                  enableDoubleTapZooming: true,
+                  enablePanning: true,
+                  enablePinching: true
+                ),
                 margin: const EdgeInsets.all(15),
                   tooltipBehavior: TooltipBehavior(
                     enable: true,
@@ -460,7 +476,11 @@ class _HomeState extends State<Home> {
             const SizedBox(height: 20,),
             SizedBox(
               height: 300,
-              child: SfCircularChart(
+              child: pieChartData.isEmpty?
+              const Center(
+                child: Text("No transactions", style: TextStyle(color: Colors.grey,fontWeight: FontWeight.bold),),
+              ):
+              SfCircularChart(
                   tooltipBehavior: TooltipBehavior(
                     enable: true,
                     format: 'point.x: ₹point.y',
@@ -493,7 +513,11 @@ class _HomeState extends State<Home> {
                 minHeight: 200,
                 minWidth: double.infinity
               ),
-              child: Column(
+              child: analyticsByCategory.isEmpty?
+              const Center(
+                child: Text("No transactions", style: TextStyle(color: Colors.grey,fontWeight: FontWeight.bold),),
+              ):
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("Analytics by Category",
@@ -557,8 +581,19 @@ class _HomeState extends State<Home> {
         itemCount: allTxn.length,
         itemBuilder: (context, index) {
           return GestureDetector(
-            onDoubleTap: (){
-              deleteDialog();
+            onDoubleTap: () async {
+              bool flag = await deleteDialog();
+              if(flag) {
+                if(allTxn[index]["type"]=="income") {
+                  response = await dbService.deleteIncome(id: allTxn[index]["id"]);
+                }
+                else {
+                  response = await dbService.deleteSpend(id: allTxn[index]["id"]);
+                }
+                if(response == "done") {
+                  loadHome();
+                }
+              }
             },
             child: ListTile(
               onLongPress: ()async{

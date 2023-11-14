@@ -40,27 +40,30 @@ class _AddSpendState extends State<AddSpend> {
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Alert'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text(text),
-              ],
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            title: const Text('Alert'),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Text(text),
+                ],
+              ),
             ),
-          ),
-          actionsAlignment: MainAxisAlignment.end,
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Ok'),
-              onPressed: () {
-                if(widget.args.containsKey("updateData")) {
+            actionsAlignment: MainAxisAlignment.end,
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Ok'),
+                onPressed: () {
+                  if(widget.args.containsKey("updateData")) {
+                    Navigator.of(context).pop();
+                  }
                   Navigator.of(context).pop();
-                }
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+                },
+              ),
+            ],
+          ),
         );
       },
     );

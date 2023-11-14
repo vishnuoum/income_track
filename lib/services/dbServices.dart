@@ -410,4 +410,39 @@ class DBService {
       return "error";
     }
   }
+
+  Future<String> deleteSpend({required int id}) async {
+    try {
+      await database.transaction((txn) async {
+        int count = await txn.rawDelete(
+            """
+            Delete from spend where id = $id
+            """);
+        log('deleteSpend() changed: $count');
+      });
+      return "done";
+    }
+    catch(error){
+      log("deleteSpend() error: $error");
+      return "error";
+    }
+  }
+
+  Future<String> deleteIncome({required int id}) async {
+    try {
+      await database.transaction((txn) async {
+        int count = await txn.rawDelete(
+            """
+            Delete from income where id = $id
+            """);
+        log('deleteIncome() changed: $count');
+      });
+      return "done";
+    }
+    catch(error){
+      log("deleteIncome() error: $error");
+      return "error";
+    }
+  }
+
 }
