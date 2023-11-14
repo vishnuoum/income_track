@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/dbServices.dart';
+
 class Init extends StatefulWidget {
   const Init({super.key});
 
@@ -8,17 +10,25 @@ class Init extends StatefulWidget {
 }
 
 class _InitState extends State<Init> {
+
+  DBService dbService = DBService();
   
   @override
   void initState() {
     super.initState();
-    load();
+    loadDB();
   }
-  
-  void load() {
-    Future.delayed(const Duration(seconds: 5), (){
-      Navigator.pushReplacementNamed(context, "/home", arguments: {});
-    });
+
+  void loadDB() async{
+    if((await dbService.initDB())=="done"){
+      if (!context.mounted) return;
+      Navigator.pushReplacementNamed(context, "/home",arguments: {"dbObject" : dbService});
+    }
+    else{
+      Future.delayed(const Duration(seconds: 5),(){
+        loadDB();
+      });
+    }
   }
   
   @override

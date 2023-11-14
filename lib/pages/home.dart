@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:income_track/chart/IncomeExpenseMonthly.dart';
 import 'package:income_track/chart/TxnCategory.dart';
+import 'package:income_track/services/dbServices.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class Home extends StatefulWidget {
@@ -15,38 +16,89 @@ class _HomeState extends State<Home> {
 
   int selector = 0;
   String barChartTitle = "Your spends this month";
+  late DBService dbService;
+  String amount = "0.0";
+  String balance = "0.0";
+  dynamic response;
+  String active = "spend";
 
-  List<Map<String,String>> data = [
-    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "1", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "2", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "3", "txnMode" : "UPI", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-    {"id" : "4", "txnMode" : "CC", "amount" : "3000", "date" : "2023-03-23", "item":"Demo", "category":"Groceries"},
-  ];
+  List<Map> data = [];
 
-  List<IncomeExpenseMonthly> barChartData = [
-    IncomeExpenseMonthly(label: 'Jan', income: 35, expense: 10),
-    IncomeExpenseMonthly(label: 'Feb', income: 5, expense: 68),
-    IncomeExpenseMonthly(label: 'Mar', income: 50, expense: 46),
-    IncomeExpenseMonthly(label: 'Apr', income: 68, expense: 75),
-  ];
+  List<Map> allTxn = [];
 
-  List<TxnCategory> pieChartData = [
-    TxnCategory(txnMode: 'CC', stats: 25),
-    TxnCategory(txnMode: 'UPI', stats: 38),
-    TxnCategory(txnMode: 'CASH', stats: 34)
-  ];
+  List<IncomeExpenseMonthly> barChartData = [];
+
+  List<TxnCategory> pieChartData = [];
 
   @override
   void initState() {
+    dbService = widget.args["dbObject"];
+    loadHome();
     super.initState();
+  }
+
+  void loadHome() async {
+    // Load Recent spends
+    response = await dbService.getRecentSpends();
+    if(response != "error") {
+      data = response;
+    }
+
+    // Load Amount
+    response = await dbService.getThisMonthSpend();
+    if(response != "error") {
+      amount = response;
+    }
+
+    // Load Balance
+    response = await dbService.getBalance();
+    if(response != "error") {
+      balance = response;
+    }
+
+    // Load bar chart data
+    switch(selector){
+      case 0:
+        response = await dbService.getThisMonthStats();
+        break;
+      case 1:
+        response = await dbService.getThisYearStats();
+        break;
+      case 2:
+        response = await dbService.getMonthlyStats();
+        break;
+      case 3:
+        response = await dbService.getYearlyStats();
+        break;
+    }
+    if(response != "error") {
+      barChartData = response;
+    }
+
+    // Load pie data
+    switch(selector) {
+      case 0:
+        response = await dbService.getThisMonthPie();
+        break;
+      case 1:
+        response = await dbService.getThisYearPie();
+        break;
+      case 2:
+      case 3:
+        response = await dbService.getAllPie();
+        break;
+    }
+    if(response != "error") {
+      pieChartData = response;
+    }
+
+    // Load all txn
+    response = await dbService.getAllTxn();
+    if(response != "error") {
+      allTxn = response;
+    }
+    setState(() {});
+
   }
 
   Widget getHomeScreen() {
@@ -54,9 +106,7 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         title: const Text("Home", style: TextStyle(fontWeight: FontWeight.bold),),
         actions: [
-          IconButton(onPressed: ()async{
-            await Navigator.pushNamed(context, "/addIncome");
-          },icon: const Icon(Icons.more_vert))
+          IconButton(onPressed: ()async{},icon: const Icon(Icons.more_vert))
         ],
       ),
       body: SafeArea(
@@ -66,17 +116,58 @@ class _HomeState extends State<Home> {
             const SizedBox(height: 60,),
             Align(
               alignment: Alignment.center,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text("This month spend"),
-                  const SizedBox(height: 15,),
-                  const Text("₹20000.00",style: TextStyle(fontSize: 40),),
-                  const SizedBox(height: 15,),
-                  TextButton.icon(onPressed: ()async{
-                    await Navigator.pushNamed(context, "/addSpend");
-                  }, icon: const Icon(Icons.add), label: const Text("Add Spend")),
-                ],
+              child: GestureDetector(
+                onTap: (){},
+                onDoubleTap: (){
+                  if(active == "spend") {
+                    active = "balance";
+                  }
+                  else if(active == "balance") {
+                    active = "spend";
+                  }
+                  setState((){});
+                },
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 500),
+                  reverseDuration: const Duration(milliseconds: 0),
+                  switchInCurve: Curves.fastOutSlowIn,
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    return ScaleTransition(
+                        filterQuality: FilterQuality.high,
+                        scale: animation, child: child
+                    );
+                  },
+                  child: active=="spend"?
+                  Column(
+                    key: ValueKey<String>(active),
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text("This month spend"),
+                      const SizedBox(height: 15,),
+                      Text("₹$amount",style: const TextStyle(fontSize: 40),),
+                      const SizedBox(height: 15,),
+                      TextButton.icon(onPressed: ()async{
+                        await Navigator.pushNamed(context, "/addSpend", arguments: {"dbObject":dbService});
+                        loadHome();
+                      }, icon: const Icon(Icons.add), label: const Text("Add Spend")),
+                    ],
+                  ):
+                  Column(
+                    key: ValueKey<String>(active),
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text("Your Balance"),
+                      const SizedBox(height: 15,),
+                      Text("₹$balance",style: const TextStyle(fontSize: 40),),
+                      const SizedBox(height: 15,),
+                      TextButton.icon(onPressed: ()async{
+                        await Navigator.pushNamed(context, "/addIncome", arguments: {"dbObject":dbService});
+                        loadHome();
+                      }, icon: const Icon(Icons.add), label: const Text("Add Income")),
+                    ],
+                  ),
+                )
+                ,
               ),
             ),
             const SizedBox(height: 30,),
@@ -97,10 +188,9 @@ class _HomeState extends State<Home> {
                         child: ListView.builder(
                           physics: const BouncingScrollPhysics(),
                           padding: const EdgeInsets.all(20),
-                          itemCount: data.length,
+                          itemCount: data.length+1,
                           itemBuilder: (context, index) {
                             if(index == 0) {
-                              index--;
                               return Center(
                                   child: Padding(
                                     padding: const EdgeInsets.only(bottom: 25, top: 15),
@@ -108,6 +198,7 @@ class _HomeState extends State<Home> {
                                   )
                               );
                             }
+                            index--;
                             return ListTile(
                               leading: Text(
                                 data[index]["txnMode"]!,
@@ -138,10 +229,10 @@ class _HomeState extends State<Home> {
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(10),
+          // padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
           children: [
             const Padding(
-              padding: EdgeInsets.only(left: 10.0,bottom: 25, top: 8),
+              padding: EdgeInsets.only(left: 20.0,bottom: 25, top: 18),
               child: Text("Analytics", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
             ),
             SizedBox(
@@ -154,10 +245,19 @@ class _HomeState extends State<Home> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 5),
                     child: TextButton(
-                      onPressed: (){
+                      onPressed: () async {
                         setState(() {
                           selector = 0;
                         });
+                        response = await dbService.getThisMonthStats();
+                        if(response !="error") {
+                          barChartData = response;
+                        }
+                        response = await dbService.getThisMonthPie();
+                        if(response !="error") {
+                          pieChartData = response;
+                        }
+                        setState(() {});
                       },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -170,10 +270,19 @@ class _HomeState extends State<Home> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 5),
                     child: TextButton(
-                      onPressed: (){
+                      onPressed: () async {
                         setState(() {
                           selector = 1;
                         });
+                        response = await dbService.getThisYearStats();
+                        if(response !="error") {
+                          barChartData = response;
+                        }
+                        response = await dbService.getThisYearPie();
+                        if(response !="error") {
+                          pieChartData = response;
+                        }
+                        setState(() {});
                       },
                       style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -186,10 +295,19 @@ class _HomeState extends State<Home> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 5),
                     child: TextButton(
-                      onPressed: (){
+                      onPressed: ()async {
                         setState(() {
                           selector = 2;
                         });
+                        response = await dbService.getMonthlyStats();
+                        if(response !="error") {
+                          barChartData = response;
+                        }
+                        response = await dbService.getAllPie();
+                        if(response !="error") {
+                          pieChartData = response;
+                        }
+                        setState(() {});
                       },
                       style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -202,10 +320,19 @@ class _HomeState extends State<Home> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 5),
                     child: TextButton(
-                      onPressed: (){
+                      onPressed: () async {
                         setState(() {
                           selector = 3;
                         });
+                        response = await dbService.getYearlyStats();
+                        if(response !="error") {
+                          barChartData = response;
+                        }
+                        response = await dbService.getAllPie();
+                        if(response !="error") {
+                          pieChartData = response;
+                        }
+                        setState(() {});
                       },
                       style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -219,12 +346,19 @@ class _HomeState extends State<Home> {
               ),
             ),
             const SizedBox(height: 20,),
-            Text(barChartTitle,style: const TextStyle(fontWeight: FontWeight.bold),),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Text(barChartTitle,style: const TextStyle(fontWeight: FontWeight.bold),),
+            ),
             const SizedBox(height: 20,),
             SizedBox(
-              height: 350,
+              height: 300,
               child: SfCartesianChart(
-                  tooltipBehavior: TooltipBehavior(enable: true),
+                margin: const EdgeInsets.all(15),
+                  tooltipBehavior: TooltipBehavior(
+                    enable: true,
+                    format: 'point.x: ₹point.y',
+                  ),
                   primaryXAxis: CategoryAxis(
                     majorGridLines: const MajorGridLines(width: 0),
                   ),
@@ -250,12 +384,19 @@ class _HomeState extends State<Home> {
               ),
             ),
             const SizedBox(height: 20,),
-            const Text("Transaction modes",style: TextStyle(fontWeight: FontWeight.bold),),
+            const Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Text("Transaction modes",style: TextStyle(fontWeight: FontWeight.bold),),
+            ),
             const SizedBox(height: 20,),
             SizedBox(
               height: 300,
               child: SfCircularChart(
-                  tooltipBehavior: TooltipBehavior(enable: true),
+                  tooltipBehavior: TooltipBehavior(
+                    enable: true,
+                    format: 'point.x: ₹point.y',
+                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   series: <CircularSeries>[
                     // Render pie chart
                     PieSeries<TxnCategory, String>(
@@ -279,12 +420,64 @@ class _HomeState extends State<Home> {
     );
   }
 
+  Widget getIncomeExpenseScreen() {
+    return Scaffold(
+      appBar: AppBar(
+        titleTextStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        title: const Text("Income & Expenses"),
+      ),
+      body: allTxn.isEmpty?
+      const Center(
+        child: Text("No transactions to show",
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey
+          ),
+        ),
+      ):
+      ListView.builder(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(top: 30),
+        itemCount: allTxn.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            onLongPress: ()async{
+              if(allTxn[index]["type"]=="income") {
+                await Navigator.pushNamed(context, "/addIncome", arguments: {"dbObject":dbService,"updateData":allTxn[index]});
+                loadHome();
+              }
+              else {
+                await Navigator.pushNamed(context, "/addSpend", arguments: {"dbObject":dbService,"updateData":allTxn[index]});
+                loadHome();
+              }
+            },
+            leading: allTxn[index]["type"]=="income"?
+            const RotatedBox(quarterTurns: 2,child: Icon(
+              Icons.arrow_outward,
+              color: Colors.green,
+            ),)
+            :const Icon(
+              Icons.arrow_outward,
+              color: Colors.red,
+            ),
+            isThreeLine: true,
+            title: Text(allTxn[index]["type"]=="income"?"Added to Balance":allTxn[index]["item"], style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
+            trailing: Text("₹${allTxn[index]["amount"]!}", style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold)),
+            subtitle: Text(allTxn[index]["date"], style: const TextStyle(fontSize: 13,fontWeight: FontWeight.bold),),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-        length: 2,
+        initialIndex: 1,
+        length: 3,
         child: TabBarView(
           children: [
+            getIncomeExpenseScreen(),
             getHomeScreen(),
             getAnalyticsScreen()
           ],
